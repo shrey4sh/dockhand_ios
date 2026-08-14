@@ -44,6 +44,16 @@
         }
       }
     },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
     "%@ %@" : {
       "localizations" : {
         "en" : {
@@ -167,6 +177,9 @@
         }
       }
     },
+    "%1$d recent · %2$d total" : {
+
+    },
     "%1$d running · %2$d stopped" : {
       "localizations" : {
         "es" : {
@@ -176,6 +189,9 @@
           }
         }
       }
+    },
+    "%1$d updates found after checking %2$d containers" : {
+
     },
     "%d container" : {
       "localizations" : {
@@ -196,6 +212,9 @@
           }
         }
       }
+    },
+    "%d containers updated" : {
+
     },
     "%d core" : {
       "localizations" : {
@@ -547,6 +566,9 @@
         }
       }
     },
+    "Activity" : {
+
+    },
     "Add a Dockhand server to start switching environments." : {
       "localizations" : {
         "es" : {
@@ -597,6 +619,9 @@
         }
       }
     },
+    "All checked containers are up to date." : {
+
+    },
     "All containers healthy" : {
       "localizations" : {
         "es" : {
@@ -636,6 +661,9 @@
           }
         }
       }
+    },
+    "Available Updates" : {
+
     },
     "Base URL" : {
       "localizations" : {
@@ -718,6 +746,9 @@
       }
     },
     "Cancel" : {
+
+    },
+    "Check for updates" : {
 
     },
     "Choose how Dockhand should redeploy this compose stack." : {
@@ -1153,6 +1184,9 @@
         }
       }
     },
+    "Dockhand will pull the latest images and recreate the selected containers while preserving their configuration." : {
+
+    },
     "Dockhand, Docker and host information for the active environment." : {
       "localizations" : {
         "es" : {
@@ -1212,6 +1246,9 @@
           }
         }
       }
+    },
+    "Enable activity collection for this environment to record container events." : {
+
     },
     "Environment" : {
       "localizations" : {
@@ -1414,6 +1451,9 @@
           }
         }
       }
+    },
+    "Internal" : {
+
     },
     "Invalid .env on line %lld: %@" : {
       "localizations" : {
@@ -1667,6 +1707,9 @@
         }
       }
     },
+    "No activity" : {
+
+    },
     "No command" : {
       "localizations" : {
         "es" : {
@@ -1676,6 +1719,9 @@
           }
         }
       }
+    },
+    "No connected containers" : {
+
     },
     "No containers" : {
       "localizations" : {
@@ -1757,6 +1803,9 @@
         }
       }
     },
+    "No pending updates" : {
+
+    },
     "No ports" : {
       "localizations" : {
         "es" : {
@@ -1817,6 +1866,9 @@
         }
       }
     },
+    "No volumes" : {
+
+    },
     "No vulnerabilities reported" : {
       "localizations" : {
         "es" : {
@@ -1827,6 +1879,9 @@
         }
       }
     },
+    "Not attached to a container" : {
+
+    },
     "Open Shell" : {
       "localizations" : {
         "es" : {
@@ -1836,6 +1891,15 @@
           }
         }
       }
+    },
+    "Opens Images" : {
+
+    },
+    "Opens Stacks" : {
+
+    },
+    "Opens the matching containers" : {
+
     },
     "OS" : {
       "localizations" : {
@@ -1889,6 +1953,9 @@
           }
         }
       }
+    },
+    "Pending updates" : {
+
     },
     "Port" : {
       "localizations" : {
@@ -2380,6 +2447,18 @@
         }
       }
     },
+    "Shows each volume and the containers and stacks using it" : {
+
+    },
+    "Shows networks and connected containers" : {
+
+    },
+    "Shows recent container activity" : {
+
+    },
+    "Shows the containers and stacks with pending updates" : {
+
+    },
     "Size" : {
       "localizations" : {
         "es" : {
@@ -2452,6 +2531,9 @@
           }
         }
       }
+    },
+    "Standalone container" : {
+
     },
     "Start" : {
       "localizations" : {
@@ -2689,6 +2771,9 @@
         }
       }
     },
+    "Unhealthy" : {
+
+    },
     "Unknown" : {
       "localizations" : {
         "es" : {
@@ -2698,6 +2783,12 @@
           }
         }
       }
+    },
+    "Unknown container" : {
+
+    },
+    "Unknown image" : {
+
     },
     "Unused" : {
       "localizations" : {
@@ -2728,6 +2819,24 @@
           }
         }
       }
+    },
+    "Update %@" : {
+
+    },
+    "Update %d containers" : {
+
+    },
+    "Update all containers" : {
+
+    },
+    "Update check failed" : {
+
+    },
+    "Update containers?" : {
+
+    },
+    "Update failed" : {
+
     },
     "Updates" : {
       "localizations" : {
