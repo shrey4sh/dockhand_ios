@@ -85,8 +85,8 @@ enum DockhandUserFacingErrorFormatter {
             switch code {
             case 401, 403:
                 return localized(
-                    "Dockhand rejected the request. Check the server token in Settings.",
-                    spanish: "Dockhand rechazó la solicitud. Revisa el token del servidor en Ajustes."
+                    "Dockhand rejected the token. It may be expired, revoked, or missing the required permissions.",
+                    spanish: "Dockhand rechazó el token. Puede haber caducado, estar revocado o no tener los permisos necesarios."
                 )
             case 404:
                 return localized(

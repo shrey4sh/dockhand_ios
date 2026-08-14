@@ -1,16 +1,22 @@
 import Foundation
 import Security
 
+enum DockhandToken {
+    static func normalized(_ value: String?) -> String {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+}
+
 enum KeychainStore {
     private static let service = "pro.dockhand.mobile"
     private static let legacyAccount = "dockhand-token"
 
     static func readToken(profileID: String) -> String? {
-        readToken(account: account(for: profileID))
+        readToken(account: account(for: profileID)).map(DockhandToken.normalized)
     }
 
     static func writeToken(_ token: String, profileID: String) {
-        writeToken(token, account: account(for: profileID))
+        writeToken(DockhandToken.normalized(token), account: account(for: profileID))
     }
 
     static func deleteToken(profileID: String) {
@@ -25,7 +31,7 @@ enum KeychainStore {
             return
         }
 
-        writeToken(legacyToken, account: targetAccount)
+        writeToken(DockhandToken.normalized(legacyToken), account: targetAccount)
         deleteToken(account: legacyAccount)
     }
 

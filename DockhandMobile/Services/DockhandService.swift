@@ -258,6 +258,11 @@ struct DockhandService {
     let baseURL: URL
     let token: String
 
+    init(baseURL: URL, token: String) {
+        self.baseURL = baseURL
+        self.token = DockhandToken.normalized(token)
+    }
+
     private var client: Client {
         DockhandAPIClientFactory.makeClient(baseURL: baseURL, token: token.isEmpty ? nil : token)
     }

@@ -3,6 +3,21 @@ import XCTest
 import DockhandAPI
 
 final class DockhandMobileTests: XCTestCase {
+    func testTokenNormalizationRemovesCopiedWhitespace() {
+        XCTAssertEqual(DockhandToken.normalized("  dh_example\n"), "dh_example")
+        XCTAssertEqual(DockhandToken.normalized("\tdh_example\r\n"), "dh_example")
+        XCTAssertEqual(DockhandToken.normalized(nil), "")
+    }
+
+    func testServiceNormalizesTokenBeforeBuildingRequests() {
+        let service = DockhandService(
+            baseURL: URL(string: "https://example.com")!,
+            token: "  dh_example\n"
+        )
+
+        XCTAssertEqual(service.token, "dh_example")
+    }
+
     func testServerAddressAcceptsHTTPAndHTTPSWithPorts() {
         XCTAssertEqual(
             DockhandServerAddress.normalizedURL(from: " https://example.com:3000/ ")?.absoluteString,
@@ -101,6 +116,10 @@ final class DockhandMobileTests: XCTestCase {
 
         XCTAssertTrue(message.contains("token"))
         XCTAssertFalse(message.contains("401"))
+        XCTAssertTrue(
+            message.localizedCaseInsensitiveContains("expired")
+                || message.localizedCaseInsensitiveContains("caducado")
+        )
     }
 
     func testUserFacingErrorDetectsCancellation() {

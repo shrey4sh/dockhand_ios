@@ -25,6 +25,7 @@ public struct BearerAuthMiddleware: ClientMiddleware {
 
 public enum DockhandAPIClientFactory {
     public static func makeClient(baseURL: URL, token: String?) -> Client {
+        let normalizedToken = token?.trimmingCharacters(in: .whitespacesAndNewlines)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 120
@@ -41,8 +42,8 @@ public enum DockhandAPIClientFactory {
         ) ?? baseURL
 
         let middlewares: [any ClientMiddleware]
-        if let token, !token.isEmpty {
-            middlewares = [BearerAuthMiddleware(bearerToken: token)]
+        if let normalizedToken, !normalizedToken.isEmpty {
+            middlewares = [BearerAuthMiddleware(bearerToken: normalizedToken)]
         } else {
             middlewares = []
         }
