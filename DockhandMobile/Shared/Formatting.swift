@@ -243,7 +243,12 @@ extension Components.Schemas.Environment {
 
         var components = URLComponents()
         components.scheme = [443, 8443, 9443].contains(port) ? "https" : "http"
-        components.host = trimmedPublicIP.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        let host = trimmedPublicIP.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        if host.contains(":") {
+            components.percentEncodedHost = "[\(host)]"
+        } else {
+            components.host = host
+        }
         components.port = port
         return components.url
     }

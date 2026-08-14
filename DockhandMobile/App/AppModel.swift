@@ -7,6 +7,31 @@ struct DockhandConnectionScope: Hashable, Sendable {
     var environmentID: Int?
 }
 
+enum DockhandServerAddress {
+    static func normalizedURL(from value: String) -> URL? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var components = URLComponents(string: trimmed),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              components.host?.isEmpty == false,
+              components.user == nil,
+              components.password == nil,
+              components.query == nil,
+              components.fragment == nil else {
+            return nil
+        }
+
+        components.scheme = scheme
+        if components.path == "/" {
+            components.path = ""
+        } else if components.path.count > 1 {
+            components.path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            components.path = components.path.isEmpty ? "" : "/\(components.path)"
+        }
+        return components.url
+    }
+}
+
 @MainActor
 @Observable
 final class AppModel {
@@ -56,13 +81,7 @@ final class AppModel {
     }
 
     var normalizedBaseURL: URL? {
-        guard let rawURL = selectedProfile?.baseURL.trimmingCharacters(in: .whitespacesAndNewlines),
-              let url = URL(string: rawURL),
-              let scheme = url.scheme,
-              !scheme.isEmpty else {
-            return nil
-        }
-        return url
+        selectedProfile.flatMap { DockhandServerAddress.normalizedURL(from: $0.baseURL) }
     }
 
     var selectedEnvironment: Components.Schemas.Environment? {
@@ -174,8 +193,18 @@ final class AppModel {
 
         do {
             let service = DockhandService(baseURL: baseURL, token: token)
-            lastHealthStatus = try await service.fetchHealthStatus()
-            let loaded = try await service.fetchEnvironments()
+            do {
+                lastHealthStatus = try await service.fetchHealthStatus()
+            } catch {
+                throw DockhandConnectionStageError(stage: .health, underlying: error)
+            }
+
+            let loaded: [Components.Schemas.Environment]
+            do {
+                loaded = try await service.fetchEnvironments()
+            } catch {
+                throw DockhandConnectionStageError(stage: .environments, underlying: error)
+            }
             environments = loaded.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 
             let preferredEnvironmentID = if forceEnvironmentReset {

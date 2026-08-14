@@ -3,6 +3,48 @@ import XCTest
 import DockhandAPI
 
 final class DockhandMobileTests: XCTestCase {
+    func testServerAddressAcceptsHTTPAndHTTPSWithPorts() {
+        XCTAssertEqual(
+            DockhandServerAddress.normalizedURL(from: " https://example.com:3000/ ")?.absoluteString,
+            "https://example.com:3000"
+        )
+        XCTAssertEqual(
+            DockhandServerAddress.normalizedURL(from: "http://192.0.2.10:3230")?.absoluteString,
+            "http://192.0.2.10:3230"
+        )
+    }
+
+    func testServerAddressRejectsUnsupportedOrAmbiguousURLs() {
+        XCTAssertNil(DockhandServerAddress.normalizedURL(from: "example.com:3000"))
+        XCTAssertNil(DockhandServerAddress.normalizedURL(from: "ftp://example.com"))
+        XCTAssertNil(DockhandServerAddress.normalizedURL(from: "https://user@example.com"))
+        XCTAssertNil(DockhandServerAddress.normalizedURL(from: "https://example.com?token=secret"))
+    }
+
+    func testConnectionErrorIdentifiesHealthFailure() {
+        let error = DockhandConnectionStageError(
+            stage: .health,
+            underlying: URLError(.cannotConnectToHost)
+        )
+
+        let message = error.dockhandUserFacingMessage
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("Dockhand"))
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("NSURLErrorDomain"))
+        XCTAssertNotEqual(message, URLError(.cannotConnectToHost).dockhandUserFacingMessage)
+    }
+
+    func testConnectionErrorIdentifiesEnvironmentFailure() {
+        let error = DockhandConnectionStageError(
+            stage: .environments,
+            underlying: DockhandServiceError.unexpectedStatus(403)
+        )
+
+        let message = error.dockhandUserFacingMessage
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("token"))
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("Dockhand"))
+        XCTAssertNotEqual(message, DockhandServiceError.unexpectedStatus(403).dockhandUserFacingMessage)
+    }
+
     func testByteFormattingUsesBinaryUnits() {
         XCTAssertTrue(1_048_576.dockhandByteCount.contains("MB"))
     }

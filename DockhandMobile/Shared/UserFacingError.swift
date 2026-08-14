@@ -1,5 +1,15 @@
 import Foundation
 
+enum DockhandConnectionStage: Sendable {
+    case health
+    case environments
+}
+
+struct DockhandConnectionStageError: Error {
+    let stage: DockhandConnectionStage
+    let underlying: Error
+}
+
 enum DockhandUserFacingErrorFormatter {
     static func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError {
@@ -14,6 +24,22 @@ enum DockhandUserFacingErrorFormatter {
     }
 
     static func message(for error: Error) -> String {
+        if let connectionError = error as? DockhandConnectionStageError {
+            let detail = message(for: connectionError.underlying)
+            switch connectionError.stage {
+            case .health:
+                return localized(
+                    "Could not validate Dockhand at this address. \(detail)",
+                    spanish: "No se pudo validar Dockhand en esta dirección. \(detail)"
+                )
+            case .environments:
+                return localized(
+                    "Dockhand is online, but its environments could not be loaded. \(detail)",
+                    spanish: "Dockhand está en línea, pero no se pudieron cargar sus entornos. \(detail)"
+                )
+            }
+        }
+
         if let urlErrorCode = urlErrorCode(in: error) ?? urlErrorCode(in: errorText(error)) {
             return message(for: urlErrorCode)
         }
