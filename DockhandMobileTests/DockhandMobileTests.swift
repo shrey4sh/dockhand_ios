@@ -18,6 +18,24 @@ final class DockhandMobileTests: XCTestCase {
         XCTAssertEqual(service.token, "dh_example")
     }
 
+    func testContainerLogErrorPreservesUnsupportedDriverDetail() {
+        let data = Data(
+            #"{"error":"Failed to get container logs","details":"configured logging driver does not support reading"}"#.utf8
+        )
+        let error = DockhandService.containerLogError(statusCode: 500, data: data)
+
+        let message = error.dockhandUserFacingMessage
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("logging driver")
+            || message.localizedCaseInsensitiveContains("driver de logs"))
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("does not support reading"))
+    }
+
+    func testContainerLogErrorKeepsAuthenticationStatus() {
+        let error = DockhandService.containerLogError(statusCode: 403, data: Data())
+
+        XCTAssertTrue(error.dockhandUserFacingMessage.localizedCaseInsensitiveContains("token"))
+    }
+
     func testServerAddressAcceptsHTTPAndHTTPSWithPorts() {
         XCTAssertEqual(
             DockhandServerAddress.normalizedURL(from: " https://example.com:3000/ ")?.absoluteString,

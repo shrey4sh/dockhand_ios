@@ -73,6 +73,12 @@ enum DockhandUserFacingErrorFormatter {
                 "Dockhand sent a response the app could not read. Try again or update the server.",
                 spanish: "Dockhand envió una respuesta que la app no pudo leer. Inténtalo de nuevo o actualiza el servidor."
             )
+        case .logsUnavailable(let reason):
+            let suffix = reason.map { " (\($0))" } ?? ""
+            return localized(
+                "Dockhand cannot read logs for this container. Its logging driver may not support reading.\(suffix)",
+                spanish: "Dockhand no puede leer los logs de este contenedor. Es posible que su driver de logs no permita la lectura.\(suffix)"
+            )
         case .message(let message):
             let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty

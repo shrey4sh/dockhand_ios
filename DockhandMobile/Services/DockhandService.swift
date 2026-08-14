@@ -235,6 +235,7 @@ enum StackRedeployStartResult: Sendable, Hashable {
 
 enum DockhandServiceError: LocalizedError {
     case invalidResponse
+    case logsUnavailable(String?)
     case message(String)
     case unexpectedStatus(Int)
 
@@ -242,6 +243,8 @@ enum DockhandServiceError: LocalizedError {
         switch self {
         case .invalidResponse:
             return String(localized: "Invalid response from Dockhand")
+        case .logsUnavailable(let reason):
+            return reason
         case .message(let message):
             return message
         case .unexpectedStatus(let code):
@@ -265,6 +268,20 @@ struct DockhandService {
 
     private var client: Client {
         DockhandAPIClientFactory.makeClient(baseURL: baseURL, token: token.isEmpty ? nil : token)
+    }
+
+    static func containerLogError(statusCode: Int, data: Data) -> DockhandServiceError {
+        guard statusCode >= 500 else {
+            return .unexpectedStatus(statusCode)
+        }
+
+        struct ErrorPayload: Decodable {
+            let error: String?
+            let details: String?
+        }
+
+        let payload = try? JSONDecoder().decode(ErrorPayload.self, from: data)
+        return .logsUnavailable(payload?.details ?? payload?.error)
     }
 
     func fetchHealthStatus() async throws -> String {
@@ -469,7 +486,7 @@ struct DockhandService {
             throw DockhandServiceError.invalidResponse
         }
         guard httpResponse.statusCode == 200 else {
-            throw DockhandServiceError.unexpectedStatus(httpResponse.statusCode)
+            throw Self.containerLogError(statusCode: httpResponse.statusCode, data: data)
         }
 
         let decoded = try JSONDecoder().decode(ContainerLogsResponse.self, from: data)

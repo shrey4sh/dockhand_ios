@@ -154,7 +154,7 @@ final class ContainerLogsStore {
                         self.isLoading = false
                         self.streamStatus = String(localized: "Live")
                     case .serverError(let message):
-                        self.error = message
+                        self.error = DockhandServiceError.logsUnavailable(message).dockhandUserFacingMessage
                         self.isLoading = false
                         self.streamStatus = String(localized: "Error")
                     case .ended:
