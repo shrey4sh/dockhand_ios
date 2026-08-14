@@ -31,10 +31,12 @@ enum PreferencesStore {
 
     static var serverProfiles: [DockhandServerProfile] {
         get {
-            if let data = defaults.data(forKey: profilesKey),
-               let decoded = try? JSONDecoder().decode([DockhandServerProfile].self, from: data),
-               !decoded.isEmpty {
-                return decoded
+            if let data = defaults.data(forKey: profilesKey) {
+                if let decoded = try? JSONDecoder().decode([DockhandServerProfile].self, from: data),
+                   !decoded.isEmpty {
+                    return decoded
+                }
+                defaults.removeObject(forKey: profilesKey)
             }
 
             let migrated = migratedLegacyProfiles()
@@ -90,8 +92,11 @@ enum PreferencesStore {
 
     private static var selectedEnvironmentIDsByProfile: [String: Int] {
         get {
-            guard let data = defaults.data(forKey: selectedEnvironmentsKey),
-                  let decoded = try? JSONDecoder().decode([String: Int].self, from: data) else {
+            guard let data = defaults.data(forKey: selectedEnvironmentsKey) else {
+                return migratedLegacySelectedEnvironments()
+            }
+            guard let decoded = try? JSONDecoder().decode([String: Int].self, from: data) else {
+                defaults.removeObject(forKey: selectedEnvironmentsKey)
                 return migratedLegacySelectedEnvironments()
             }
             return decoded
@@ -105,8 +110,11 @@ enum PreferencesStore {
 
     private static var cachedDashboardSnapshots: [String: CachedDashboardSnapshot] {
         get {
-            guard let data = defaults.data(forKey: dashboardSnapshotsKey),
-                  let decoded = try? JSONDecoder().decode([String: CachedDashboardSnapshot].self, from: data) else {
+            guard let data = defaults.data(forKey: dashboardSnapshotsKey) else {
+                return [:]
+            }
+            guard let decoded = try? JSONDecoder().decode([String: CachedDashboardSnapshot].self, from: data) else {
+                defaults.removeObject(forKey: dashboardSnapshotsKey)
                 return [:]
             }
             return decoded

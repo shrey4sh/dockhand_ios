@@ -47,7 +47,13 @@ final class AppModel {
 
     init() {
         let storedProfiles = PreferencesStore.serverProfiles
-        let resolvedProfileID = PreferencesStore.selectedProfileID ?? storedProfiles.first?.id
+        let storedProfileID = PreferencesStore.selectedProfileID
+        let resolvedProfileID = storedProfileID.flatMap { selectedID in
+            storedProfiles.contains(where: { $0.id == selectedID }) ? selectedID : nil
+        } ?? storedProfiles.first?.id
+        if storedProfileID != resolvedProfileID {
+            PreferencesStore.selectedProfileID = resolvedProfileID
+        }
         if let resolvedProfileID {
             KeychainStore.migrateLegacyTokenIfNeeded(to: resolvedProfileID)
         }

@@ -3,6 +3,41 @@ import XCTest
 import DockhandAPI
 
 final class DockhandMobileTests: XCTestCase {
+    @MainActor
+    func testStartupDiscardsCorruptPersistedProfiles() throws {
+        try withRestoredDefaults(keys: ["dockhand.serverProfiles", "dockhand.baseURL"]) { defaults in
+            let corruptData = Data("not-json".utf8)
+            defaults.set(corruptData, forKey: "dockhand.serverProfiles")
+            defaults.removeObject(forKey: "dockhand.baseURL")
+
+            _ = PreferencesStore.serverProfiles
+            let repairedData = defaults.data(forKey: "dockhand.serverProfiles")
+            XCTAssertNotEqual(repairedData, corruptData)
+            if let repairedData {
+                XCTAssertNoThrow(try JSONDecoder().decode([DockhandServerProfile].self, from: repairedData))
+            }
+        }
+    }
+
+    @MainActor
+    func testStartupRepairsMissingSelectedProfile() throws {
+        let keys = ["dockhand.serverProfiles", "dockhand.selectedProfileID"]
+        try withRestoredDefaults(keys: keys) { defaults in
+            let profile = DockhandServerProfile(
+                id: "available-profile",
+                name: "Example",
+                baseURL: "https://example.com"
+            )
+            defaults.set(try JSONEncoder().encode([profile]), forKey: "dockhand.serverProfiles")
+            defaults.set("removed-profile", forKey: "dockhand.selectedProfileID")
+
+            let model = AppModel()
+
+            XCTAssertEqual(model.selectedProfileID, profile.id)
+            XCTAssertEqual(defaults.string(forKey: "dockhand.selectedProfileID"), profile.id)
+        }
+    }
+
     func testTokenNormalizationRemovesCopiedWhitespace() {
         XCTAssertEqual(DockhandToken.normalized("  dh_example\n"), "dh_example")
         XCTAssertEqual(DockhandToken.normalized("\tdh_example\r\n"), "dh_example")
@@ -205,6 +240,27 @@ final class DockhandMobileTests: XCTestCase {
         }
 
         XCTAssertTrue(WrappedCancellationError().isDockhandCancellation)
+    }
+
+    @MainActor
+    private func withRestoredDefaults(
+        keys: [String],
+        operation: (UserDefaults) throws -> Void
+    ) rethrows {
+        let defaults = UserDefaults.standard
+        let previousValues = keys.reduce(into: [String: Any]()) { values, key in
+            values[key] = defaults.object(forKey: key)
+        }
+        defer {
+            for key in keys {
+                if let value = previousValues[key] {
+                    defaults.set(value, forKey: key)
+                } else {
+                    defaults.removeObject(forKey: key)
+                }
+            }
+        }
+        try operation(defaults)
     }
 
     func testPublishedPortURLUsesEnvironmentPublicIP() {
