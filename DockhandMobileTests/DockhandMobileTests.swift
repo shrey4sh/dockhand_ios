@@ -36,6 +36,58 @@ final class DockhandMobileTests: XCTestCase {
         XCTAssertTrue(error.dockhandUserFacingMessage.localizedCaseInsensitiveContains("token"))
     }
 
+    func testUpdateCheckJobDecodesProgressAndResult() throws {
+        let data = Data(#"{"status":"done","lines":[{"event":"progress","data":{"checked":3,"total":5}}],"result":{"total":5,"updatesFound":2,"results":[]}}"#.utf8)
+
+        let snapshot = try JSONDecoder().decode(ContainerUpdateCheckJobSnapshot.self, from: data)
+        XCTAssertEqual(snapshot.status, "done")
+        XCTAssertEqual(snapshot.lines.first?.data.checked, 3)
+        XCTAssertEqual(snapshot.lines.first?.data.total, 5)
+        XCTAssertEqual(snapshot.result?.updatesFound, 2)
+    }
+
+    func testBatchUpdateResponseDecodesFailures() throws {
+        let data = Data(#"{"success":false,"results":[{"containerId":"abc","containerName":"web","success":false,"error":"Pull failed"}],"summary":{"total":1,"success":0,"failed":1}}"#.utf8)
+
+        let response = try JSONDecoder().decode(ContainerBatchUpdateResponse.self, from: data)
+        XCTAssertFalse(response.success)
+        XCTAssertEqual(response.summary.failed, 1)
+        XCTAssertEqual(response.results.first?.containerID, "abc")
+        XCTAssertEqual(response.results.first?.error, "Pull failed")
+    }
+
+    func testLiveUpdateCheckWhenIntegrationServerIsConfigured() async throws {
+        guard let rawURL = ProcessInfo.processInfo.environment["DOCKHAND_INTEGRATION_URL"],
+              let baseURL = URL(string: rawURL) else {
+            throw XCTSkip("Set DOCKHAND_INTEGRATION_URL to run the live Dockhand check")
+        }
+        let environmentID = Int(ProcessInfo.processInfo.environment["DOCKHAND_INTEGRATION_ENV"] ?? "") ?? 1
+        let service = DockhandService(baseURL: baseURL, token: "")
+        let operation = try await service.startContainerUpdateCheck(environmentID: environmentID)
+
+        if case .completed(let result) = operation {
+            XCTAssertGreaterThan(result.total, 0)
+            XCTAssertGreaterThanOrEqual(result.updatesFound, 0)
+            return
+        }
+
+        guard case .job(let jobID) = operation else {
+            return XCTFail("Unexpected update check response")
+        }
+
+        for _ in 0..<120 {
+            let snapshot = try await service.fetchContainerUpdateCheckJob(id: jobID)
+            if snapshot.status != "running" {
+                XCTAssertEqual(snapshot.status, "done")
+                XCTAssertNotNil(snapshot.result)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(250))
+        }
+
+        XCTFail("Dockhand update check did not finish in time")
+    }
+
     func testServerAddressAcceptsHTTPAndHTTPSWithPorts() {
         XCTAssertEqual(
             DockhandServerAddress.normalizedURL(from: " https://example.com:3000/ ")?.absoluteString,

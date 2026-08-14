@@ -158,6 +158,58 @@ struct PendingContainerUpdate: Sendable, Hashable {
     var checkedAt: String?
 }
 
+struct ContainerUpdateCheckProgress: Decodable, Sendable, Hashable {
+    var checked: Int?
+    var total: Int?
+}
+
+struct ContainerUpdateCheckResult: Decodable, Sendable, Hashable {
+    var total: Int
+    var updatesFound: Int
+}
+
+enum ContainerUpdateCheckOperation: Sendable, Hashable {
+    case job(String)
+    case completed(ContainerUpdateCheckResult)
+}
+
+struct ContainerUpdateCheckJobLine: Decodable, Sendable, Hashable {
+    var event: String?
+    var data: ContainerUpdateCheckProgress
+}
+
+struct ContainerUpdateCheckJobSnapshot: Decodable, Sendable, Hashable {
+    var status: String
+    var lines: [ContainerUpdateCheckJobLine]
+    var result: ContainerUpdateCheckResult?
+}
+
+struct ContainerBatchUpdateResult: Decodable, Sendable, Hashable {
+    var containerID: String
+    var containerName: String
+    var success: Bool
+    var error: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case containerID = "containerId"
+        case containerName
+        case success
+        case error
+    }
+}
+
+struct ContainerBatchUpdateSummary: Decodable, Sendable, Hashable {
+    var total: Int
+    var success: Int
+    var failed: Int
+}
+
+struct ContainerBatchUpdateResponse: Decodable, Sendable, Hashable {
+    var success: Bool
+    var results: [ContainerBatchUpdateResult]
+    var summary: ContainerBatchUpdateSummary
+}
+
 struct VolumeUsageSnapshot: Sendable, Hashable {
     var containerID: String
     var containerName: String
@@ -371,6 +423,45 @@ struct DockhandService {
             environmentID: environmentID
         )
         return Self.decodePendingContainerUpdates(response)
+    }
+
+    func startContainerUpdateCheck(environmentID: Int) async throws -> ContainerUpdateCheckOperation {
+        let response = try await performJSONRequest(
+            path: "/api/containers/check-updates",
+            method: "POST",
+            environmentID: environmentID
+        )
+        if let jobID = response["jobId"] as? String, !jobID.isEmpty {
+            return .job(jobID)
+        }
+        let data = try JSONSerialization.data(withJSONObject: response)
+        return .completed(try JSONDecoder().decode(ContainerUpdateCheckResult.self, from: data))
+    }
+
+    func fetchContainerUpdateCheckJob(id: String) async throws -> ContainerUpdateCheckJobSnapshot {
+        let encodedID = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        var request = URLRequest(url: baseURL.appending(path: "/api/jobs/\(encodedID)"))
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        try Self.validateResponse(response, data: data)
+        return try JSONDecoder().decode(ContainerUpdateCheckJobSnapshot.self, from: data)
+    }
+
+    func updateContainers(ids: [String], environmentID: Int) async throws -> ContainerBatchUpdateResponse {
+        guard !ids.isEmpty else { throw DockhandServiceError.invalidResponse }
+        let response = try await performJSONRequest(
+            path: "/api/containers/batch-update",
+            method: "POST",
+            environmentID: environmentID,
+            body: ["containerIds": ids]
+        )
+        let data = try JSONSerialization.data(withJSONObject: response)
+        return try JSONDecoder().decode(ContainerBatchUpdateResponse.self, from: data)
     }
 
     func fetchVolumes(environmentID: Int) async throws -> [VolumeSnapshot] {
