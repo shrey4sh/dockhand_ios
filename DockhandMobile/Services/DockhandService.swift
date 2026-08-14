@@ -678,26 +678,10 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (bytes, response) = try await URLSession(configuration: .ephemeral).bytes(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DockhandServiceError.invalidResponse
-        }
-        guard httpResponse.statusCode == 200 else {
-            throw DockhandServiceError.unexpectedStatus(httpResponse.statusCode)
-        }
-
-        // URLSession has already established and validated the SSE response here.
-        // Do not keep the UI in "Connecting" while AsyncBytes waits to yield the
-        // server's first complete line (the server also sends a connected event).
-        await onEvent(.connected)
-
-        var parser = ContainerLogSSEParser()
-
-        for try await line in bytes.lines {
+        let eventStream = ContainerLogEventStream(request: request)
+        for try await event in eventStream.events {
             try Task.checkCancellation()
-            if let event = try parser.consume(line: line) {
-                await onEvent(event)
-            }
+            await onEvent(event)
         }
     }
 
@@ -1276,6 +1260,156 @@ enum ContainerLogEvent: Sendable {
     case log(String)
     case serverError(String)
     case ended
+}
+
+struct ContainerLogSSEDecoder {
+    private var buffer = Data()
+    private var parser = ContainerLogSSEParser()
+
+    mutating func consume(_ data: Data) throws -> [ContainerLogEvent] {
+        buffer.append(data)
+        var events: [ContainerLogEvent] = []
+
+        while let newlineIndex = buffer.firstIndex(of: 0x0A) {
+            let lineData = Data(buffer[..<newlineIndex])
+            buffer.removeSubrange(...newlineIndex)
+            var line = String(decoding: lineData, as: UTF8.self)
+            if line.last == "\r" {
+                line.removeLast()
+            }
+            if let event = try parser.consume(line: line) {
+                events.append(event)
+            }
+        }
+
+        return events
+    }
+
+    mutating func finish() throws -> [ContainerLogEvent] {
+        guard !buffer.isEmpty else { return [] }
+        defer { buffer.removeAll(keepingCapacity: false) }
+        let line = String(decoding: buffer, as: UTF8.self)
+        return try parser.consume(line: line).map { [$0] } ?? []
+    }
+}
+
+private final class ContainerLogEventStream: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private var continuation: AsyncThrowingStream<ContainerLogEvent, Error>.Continuation?
+    private var decoder = ContainerLogSSEDecoder()
+    private var responseStatus: Int?
+    private var errorBody = Data()
+    private var session: URLSession?
+    private var task: URLSessionDataTask?
+    private let request: URLRequest
+
+    init(request: URLRequest) {
+        self.request = request
+    }
+
+    lazy var events: AsyncThrowingStream<ContainerLogEvent, Error> = {
+        AsyncThrowingStream { continuation in
+            self.continuation = continuation
+
+            let delegateQueue = OperationQueue()
+            delegateQueue.maxConcurrentOperationCount = 1
+            let session = URLSession(
+                configuration: .ephemeral,
+                delegate: self,
+                delegateQueue: delegateQueue
+            )
+            let task = session.dataTask(with: self.request)
+            self.session = session
+            self.task = task
+            continuation.onTermination = { [weak self] _ in
+                self?.cancel()
+            }
+            task.resume()
+        }
+    }()
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        guard let response = response as? HTTPURLResponse else {
+            continuation?.finish(throwing: DockhandServiceError.invalidResponse)
+            completionHandler(.cancel)
+            return
+        }
+
+        responseStatus = response.statusCode
+        if response.statusCode == 200 {
+            continuation?.yield(.connected)
+        }
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        guard responseStatus == 200 else {
+            errorBody.append(data)
+            return
+        }
+
+        do {
+            for event in try decoder.consume(data) {
+                continuation?.yield(event)
+            }
+        } catch {
+            continuation?.finish(throwing: error)
+            dataTask.cancel()
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        defer { releaseResources() }
+
+        if let error {
+            if (error as? URLError)?.code == .cancelled {
+                continuation?.finish(throwing: CancellationError())
+            } else {
+                continuation?.finish(throwing: error)
+            }
+            return
+        }
+
+        guard let responseStatus else {
+            continuation?.finish(throwing: DockhandServiceError.invalidResponse)
+            return
+        }
+        guard responseStatus == 200 else {
+            continuation?.finish(
+                throwing: DockhandService.containerLogError(statusCode: responseStatus, data: errorBody)
+            )
+            return
+        }
+
+        do {
+            for event in try decoder.finish() {
+                continuation?.yield(event)
+            }
+            continuation?.finish()
+        } catch {
+            continuation?.finish(throwing: error)
+        }
+    }
+
+    private func cancel() {
+        task?.cancel()
+        session?.invalidateAndCancel()
+    }
+
+    private func releaseResources() {
+        continuation = nil
+        task = nil
+        session?.finishTasksAndInvalidate()
+        session = nil
+    }
 }
 
 struct ContainerLogSSEParser {

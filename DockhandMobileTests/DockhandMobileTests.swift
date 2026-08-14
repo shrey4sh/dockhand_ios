@@ -123,6 +123,36 @@ final class DockhandMobileTests: XCTestCase {
         XCTFail("Dockhand update check did not finish in time")
     }
 
+    func testLiveLogStreamWhenIntegrationContainerIsConfigured() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let rawURL = environment["DOCKHAND_INTEGRATION_URL"],
+              let baseURL = URL(string: rawURL),
+              let containerID = environment["DOCKHAND_INTEGRATION_LOG_CONTAINER"],
+              !containerID.isEmpty else {
+            throw XCTSkip("Set the Dockhand integration URL and log container to run the live stream test")
+        }
+        let environmentID = Int(environment["DOCKHAND_INTEGRATION_ENV"] ?? "") ?? 1
+        let service = DockhandService(baseURL: baseURL, token: "")
+        let receivedLog = expectation(description: "Receive a streamed container log")
+        receivedLog.assertForOverFulfill = false
+
+        let streamTask = Task {
+            try await service.streamContainerLogs(
+                containerID: containerID,
+                environmentID: environmentID,
+                tail: 1
+            ) { event in
+                if case .log(let text) = event, !text.isEmpty {
+                    receivedLog.fulfill()
+                }
+            }
+        }
+
+        await fulfillment(of: [receivedLog], timeout: 10)
+        streamTask.cancel()
+        _ = await streamTask.result
+    }
+
     func testServerAddressAcceptsHTTPAndHTTPSWithPorts() {
         XCTAssertEqual(
             DockhandServerAddress.normalizedURL(from: " https://example.com:3000/ ")?.absoluteString,
@@ -433,6 +463,33 @@ final class DockhandMobileTests: XCTestCase {
         guard case .ended? = try parser.consume(line: "") else {
             return XCTFail("Expected an end event")
         }
+    }
+
+    func testContainerLogSSEDecoderHandlesLinesSplitAcrossNetworkChunks() throws {
+        var decoder = ContainerLogSSEDecoder()
+
+        XCTAssertTrue(try decoder.consume(Data("event: log\r\nda".utf8)).isEmpty)
+        let events = try decoder.consume(Data("ta: {\"text\":\"live line\\n\"}\r\n\r\n".utf8))
+
+        guard case .log(let text)? = events.first else {
+            return XCTFail("Expected a decoded log event")
+        }
+        XCTAssertEqual(text, "live line\n")
+    }
+
+    @MainActor
+    func testContainerLogsStoreBatchesAndOrdersLiveFormatting() async throws {
+        let store = ContainerLogsStore()
+
+        store.appendLiveLog("2026-08-14T10:00:00Z older")
+        store.appendLiveLog("2026-08-14T10:00:01Z latest")
+
+        XCTAssertTrue(store.document.logs.contains("latest"))
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertEqual(
+            String(store.formattedLogs.characters),
+            "2026-08-14T10:00:01Z latest\n2026-08-14T10:00:00Z older"
+        )
     }
 
     func testContainerLogFormatterOrdersMixedBatchesByTimestampDescending() {

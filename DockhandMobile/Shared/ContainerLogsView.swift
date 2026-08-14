@@ -20,6 +20,7 @@ final class ContainerLogsStore {
 
     private var runGeneration = 0
     private var streamHasReceivedLog = false
+    private var liveFormattingTask: Task<Void, Never>?
 
     func run(target: ContainerLogTarget, appModel: AppModel) async {
         runGeneration &+= 1
@@ -54,12 +55,14 @@ final class ContainerLogsStore {
 
     func cancelCurrentRun() {
         runGeneration &+= 1
+        cancelPendingLiveFormatting()
         isLoading = false
         streamStatus = String(localized: "Stopped")
     }
 
     func pauseForBackground() {
         runGeneration &+= 1
+        cancelPendingLiveFormatting()
         isLoading = false
         error = nil
         streamStatus = String(localized: "Paused")
@@ -154,16 +157,19 @@ final class ContainerLogsStore {
                         self.isLoading = false
                         self.streamStatus = String(localized: "Live")
                     case .serverError(let message):
+                        self.flushLiveFormatting()
                         self.error = DockhandServiceError.logsUnavailable(message).dockhandUserFacingMessage
                         self.isLoading = false
                         self.streamStatus = String(localized: "Error")
                     case .ended:
+                        self.flushLiveFormatting()
                         self.isLoading = false
                         self.streamStatus = String(localized: "Stopped")
                     }
                 }
             }
             guard isCurrent(generation), error == nil else { return }
+            flushLiveFormatting()
             streamStatus = String(localized: "Stopped")
         } catch let streamError {
             guard isCurrent(generation) else { return }
@@ -171,6 +177,7 @@ final class ContainerLogsStore {
                 streamStatus = String(localized: "Stopped")
                 return
             }
+            flushLiveFormatting()
             error = streamError.dockhandUserFacingMessage
             streamStatus = String(localized: "Error")
         }
@@ -181,11 +188,12 @@ final class ContainerLogsStore {
     }
 
     private func replaceLogs(_ logs: String) {
+        cancelPendingLiveFormatting()
         document = ContainerLogsDocument(logs: logs)
         formattedLogs = ContainerLogFormatter.make(from: logs)
     }
 
-    private func appendLiveLog(_ log: String) {
+    func appendLiveLog(_ log: String) {
         guard !log.isEmpty else { return }
 
         if !document.logs.isEmpty,
@@ -200,7 +208,29 @@ final class ContainerLogsStore {
             document.logs = String(document.logs.suffix(maxLength))
         }
 
+        guard liveFormattingTask == nil else { return }
+        liveFormattingTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                return
+            }
+            guard let self else { return }
+            self.formattedLogs = ContainerLogFormatter.make(from: self.document.logs)
+            self.liveFormattingTask = nil
+        }
+    }
+
+    private func flushLiveFormatting() {
+        guard liveFormattingTask != nil else { return }
+        liveFormattingTask?.cancel()
+        liveFormattingTask = nil
         formattedLogs = ContainerLogFormatter.make(from: document.logs)
+    }
+
+    private func cancelPendingLiveFormatting() {
+        liveFormattingTask?.cancel()
+        liveFormattingTask = nil
     }
 }
 
