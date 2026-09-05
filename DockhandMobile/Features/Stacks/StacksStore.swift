@@ -34,6 +34,7 @@ final class StacksStore {
 
         isLoading = true
         error = nil
+        stacks = []
         defer { isLoading = false }
 
         do {
@@ -42,7 +43,10 @@ final class StacksStore {
                 .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         } catch {
             guard !error.isDockhandCancellation else { return }
-            self.error = error.dockhandUserFacingMessage
+            self.error = DockhandConnectionStageError(
+                stage: .selectedEnvironment,
+                underlying: error
+            ).dockhandUserFacingMessage
         }
     }
 

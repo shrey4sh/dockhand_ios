@@ -195,6 +195,45 @@ final class DockhandMobileTests: XCTestCase {
         XCTAssertNotEqual(message, DockhandServiceError.unexpectedStatus(403).dockhandUserFacingMessage)
     }
 
+    func testConnectionErrorIdentifiesSelectedEnvironmentTransportFailure() {
+        struct WrappedTransportError: LocalizedError {
+            var errorDescription: String? {
+                #"Client encountered an error invoking the operation "listStacks": Transport threw an error. underlying error: Error Domain=NSURLErrorDomain Code=-1001"#
+            }
+        }
+
+        let error = DockhandConnectionStageError(
+            stage: .selectedEnvironment,
+            underlying: WrappedTransportError()
+        )
+        let message = error.dockhandUserFacingMessage
+
+        XCTAssertTrue(
+            message.localizedCaseInsensitiveContains("selected Docker environment")
+                || message.localizedCaseInsensitiveContains("entorno Docker seleccionado")
+        )
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("Hawser"))
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("listStacks"))
+        XCTAssertFalse(message.localizedCaseInsensitiveContains("NSURLErrorDomain"))
+    }
+
+    func testConnectionErrorPreservesSelectedEnvironmentServerError() {
+        let error = DockhandConnectionStageError(
+            stage: .selectedEnvironment,
+            underlying: DockhandServiceError.unexpectedStatus(500)
+        )
+        let message = error.dockhandUserFacingMessage
+
+        XCTAssertTrue(
+            message.localizedCaseInsensitiveContains("selected environment")
+                || message.localizedCaseInsensitiveContains("entorno seleccionado")
+        )
+        XCTAssertTrue(
+            message.localizedCaseInsensitiveContains("server error")
+                || message.localizedCaseInsensitiveContains("error del servidor")
+        )
+    }
+
     func testByteFormattingUsesBinaryUnits() {
         XCTAssertTrue(1_048_576.dockhandByteCount.contains("MB"))
     }

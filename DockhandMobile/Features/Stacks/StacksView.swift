@@ -48,7 +48,7 @@ struct StacksView: View {
             }
 
             Section("Stacks") {
-                if filteredStacks.isEmpty {
+                if store.error == nil && filteredStacks.isEmpty {
                     Text(
                         stateFilter == .all
                             ? String(localized: "No stacks")

@@ -3,6 +3,7 @@ import Foundation
 enum DockhandConnectionStage: Sendable {
     case health
     case environments
+    case selectedEnvironment
 }
 
 struct DockhandConnectionStageError: Error {
@@ -36,6 +37,17 @@ enum DockhandUserFacingErrorFormatter {
                 return localized(
                     "Dockhand is online, but its environments could not be loaded. \(detail)",
                     spanish: "Dockhand está en línea, pero no se pudieron cargar sus entornos. \(detail)"
+                )
+            case .selectedEnvironment:
+                if isTransportFailure(connectionError.underlying) {
+                    return localized(
+                        "Dockhand is online, but the selected Docker environment could not be reached. Check the environment or Hawser connection.",
+                        spanish: "Dockhand está en línea, pero no se pudo acceder al entorno Docker seleccionado. Revisa la conexión del entorno o de Hawser."
+                    )
+                }
+                return localized(
+                    "Dockhand is online, but data could not be loaded from the selected environment. \(detail)",
+                    spanish: "Dockhand está en línea, pero no se pudieron cargar los datos del entorno seleccionado. \(detail)"
                 )
             }
         }
@@ -213,6 +225,12 @@ enum DockhandUserFacingErrorFormatter {
             "NSErrorFailingURL",
             "OpenAPIRuntime"
         ].contains { message.localizedCaseInsensitiveContains($0) }
+    }
+
+    private static func isTransportFailure(_ error: Error) -> Bool {
+        urlErrorCode(in: error) != nil
+            || urlErrorCode(in: errorText(error)) != nil
+            || looksLikeTechnicalTransportError(errorText(error))
     }
 
     private static func errorText(_ error: Error) -> String {
