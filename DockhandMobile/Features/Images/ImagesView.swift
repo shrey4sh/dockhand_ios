@@ -427,6 +427,7 @@ private struct ImageDetailView: View {
                 scanCard
             }
             .padding()
+            .padding(.bottom, 80)
         }
         .navigationTitle(liveImage.displayName)
         .navigationBarTitleDisplayMode(.inline)
