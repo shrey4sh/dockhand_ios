@@ -15,6 +15,19 @@ You can try the latest beta build on TestFlight here:
 
 [Join Dockhand iOS on TestFlight](https://testflight.apple.com/join/FFE3aDxR)
 
+## Releases
+
+Every stable version is published on the [GitHub Releases page](https://github.com/garanda21/dockhand_ios/releases). Release notes are generated from merged pull requests and include the relevant changes and contributors.
+
+To publish a version, update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`, merge the release commit into `main`, then push a matching tag:
+
+```sh
+git tag v1.1.1
+git push origin v1.1.1
+```
+
+Pushing a `v*` tag that points to `main` creates the GitHub Release automatically. Tags with a suffix such as `v1.2.0-beta.1` are published as pre-releases.
+
 ## Screenshots
 
 | Dashboard | Containers | Stacks | Images |
