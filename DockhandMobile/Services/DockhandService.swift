@@ -354,7 +354,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw DockhandServiceError.invalidResponse
         }
@@ -447,7 +447,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
         return try JSONDecoder().decode(ContainerUpdateCheckJobSnapshot.self, from: data)
     }
@@ -572,7 +572,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw DockhandServiceError.invalidResponse
         }
@@ -607,7 +607,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw DockhandServiceError.invalidResponse
         }
@@ -768,7 +768,7 @@ struct DockhandService {
             "scanAfterPull": false
         ])
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
 
         if let payload = try? JSONDecoder().decode(ImagePullJobStartPayload.self, from: data),
@@ -796,7 +796,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
         return try JSONDecoder().decode(ImagePullJobSnapshot.self, from: data)
     }
@@ -1021,7 +1021,7 @@ struct DockhandService {
             "forceRecreate": options.forceRecreate
         ])
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
 
         if let payload = try? JSONDecoder().decode(ImagePullJobStartPayload.self, from: data),
@@ -1046,7 +1046,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
         return try JSONDecoder().decode(StackRedeployJobSnapshot.self, from: data)
     }
@@ -1155,7 +1155,7 @@ struct DockhandService {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw DockhandServiceError.invalidResponse
         }
@@ -1192,7 +1192,7 @@ struct DockhandService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+        let (data, response) = try await URLSession(configuration: .dockhandEphemeral).data(for: request)
         try Self.validateResponse(response, data: data)
         guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
             throw DockhandServiceError.invalidResponse
@@ -1313,7 +1313,7 @@ private final class ContainerLogEventStream: NSObject, URLSessionDataDelegate, @
             let delegateQueue = OperationQueue()
             delegateQueue.maxConcurrentOperationCount = 1
             let session = URLSession(
-                configuration: .ephemeral,
+                configuration: .dockhandEphemeral,
                 delegate: self,
                 delegateQueue: delegateQueue
             )

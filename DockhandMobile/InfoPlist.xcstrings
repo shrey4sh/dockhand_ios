@@ -30,6 +30,24 @@
           }
         }
       }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Privacy prompt explaining why Dockhand needs access to servers on the local network",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockhand connects to servers on your local network so you can manage your containers."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockhand se conecta a servidores de tu red local para que puedas gestionar tus contenedores."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

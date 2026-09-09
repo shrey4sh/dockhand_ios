@@ -82,7 +82,7 @@ final class ContainerShellStore {
                 shell: selectedShell,
                 user: selectedUser
             )
-            let task = URLSession(configuration: .ephemeral).webSocketTask(with: request)
+            let task = URLSession(configuration: .dockhandEphemeral).webSocketTask(with: request)
             webSocketTask = task
             task.resume()
             isConnected = true
