@@ -27,6 +27,7 @@ public enum DockhandAPIClientFactory {
     public static func makeClient(baseURL: URL, token: String?) -> Client {
         let normalizedToken = token?.trimmingCharacters(in: .whitespacesAndNewlines)
         let configuration = URLSessionConfiguration.ephemeral
+        configuration.waitsForConnectivity = true
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 120
         configuration.httpAdditionalHeaders = ["Accept": "application/json"]

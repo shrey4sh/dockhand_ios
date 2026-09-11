@@ -285,6 +285,43 @@ final class DockhandMobileTests: XCTestCase {
         XCTAssertFalse(message.contains("NSURLErrorDomain"))
     }
 
+    func testUserFacingErrorExplainsAppTransportSecurityFailure() {
+        let error = NSError(
+            domain: NSURLErrorDomain,
+            code: URLError.appTransportSecurityRequiresSecureConnection.rawValue
+        )
+        let message = error.dockhandUserFacingMessage
+
+        XCTAssertTrue(message.localizedCaseInsensitiveContains("HTTPS"))
+        XCTAssertFalse(message.contains("-1022"))
+    }
+
+    func testDockhandSessionWaitsForConnectivity() {
+        let configuration = URLSessionConfiguration.dockhandEphemeral
+
+        XCTAssertTrue(configuration.waitsForConnectivity)
+        XCTAssertEqual(configuration.timeoutIntervalForRequest, 30)
+        XCTAssertEqual(configuration.timeoutIntervalForResource, 120)
+    }
+
+    func testAppTransportSecurityAllowsHTTPForLiteralIPAddresses() throws {
+        let transportSecurity = try XCTUnwrap(
+            Bundle.main.object(forInfoDictionaryKey: "NSAppTransportSecurity") as? [String: Any]
+        )
+        let exceptions = try XCTUnwrap(
+            transportSecurity["NSExceptionDomains"] as? [String: [String: Any]]
+        )
+
+        XCTAssertEqual(
+            Set(exceptions.keys),
+            ["0.0.0.0/0", "::/0"]
+        )
+        XCTAssertTrue(exceptions.values.allSatisfy {
+            $0["NSExceptionAllowsInsecureHTTPLoads"] as? Bool == true
+        })
+        XCTAssertNil(transportSecurity["NSAllowsArbitraryLoads"])
+    }
+
     func testUserFacingErrorMapsAuthenticationStatus() {
         let message = DockhandServiceError.unexpectedStatus(401).dockhandUserFacingMessage
 

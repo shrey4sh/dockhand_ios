@@ -1,5 +1,15 @@
 import Foundation
 
+extension URLSessionConfiguration {
+    static var dockhandEphemeral: URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.waitsForConnectivity = true
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 120
+        return configuration
+    }
+}
+
 enum DockhandConnectionStage: Sendable {
     case health
     case environments
@@ -157,6 +167,11 @@ enum DockhandUserFacingErrorFormatter {
                 "Could not reach the Dockhand server. Check that it is online and reachable from this network.",
                 spanish: "No se pudo acceder al servidor Dockhand. Comprueba que esté encendido y accesible desde esta red."
             )
+        case .appTransportSecurityRequiresSecureConnection:
+            return localized(
+                "iOS blocked this insecure connection. Use HTTPS or a server address on your local network.",
+                spanish: "iOS bloqueó esta conexión no segura. Usa HTTPS o una dirección de servidor de tu red local."
+            )
         case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate, .serverCertificateNotYetValid:
             return localized(
                 "The secure connection to Dockhand failed. Check the server certificate or URL.",
@@ -205,6 +220,7 @@ enum DockhandUserFacingErrorFormatter {
             ("Code=-1003", .cannotFindHost),
             ("Code=-1006", .dnsLookupFailed),
             ("Code=-1004", .cannotConnectToHost),
+            ("Code=-1022", .appTransportSecurityRequiresSecureConnection),
             ("Code=-999", .cancelled),
             ("Code=-1200", .secureConnectionFailed),
             ("Code=-1202", .serverCertificateUntrusted),
