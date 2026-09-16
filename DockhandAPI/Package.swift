@@ -1,10 +1,10 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "DockhandAPI",
     platforms: [
-        .iOS(.v26),
+        .iOS(.v17),
         .macOS(.v14)
     ],
     products: [
