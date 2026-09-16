@@ -14,8 +14,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.12.0"),
-        .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-openapi-runtime", "1.0.0"..<"1.11.0"),
+        .package(url: "https://github.com/apple/swift-openapi-urlsession", "1.0.0"..<"1.3.0")
     ],
     targets: [
         .target(
