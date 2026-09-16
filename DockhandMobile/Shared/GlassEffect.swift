@@ -29,3 +29,41 @@ extension View {
         }
     }
 }
+
+public struct GlassButtonStyle: ButtonStyle {
+    public init() {}
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+            }
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+    }
+}
+
+public struct GlassProminentButtonStyle: ButtonStyle {
+    public init() {}
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Color.accentColor.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+            }
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+    }
+}
+
+extension ButtonStyle where Self == GlassButtonStyle {
+    public static var glass: GlassButtonStyle { GlassButtonStyle() }
+}
+
+extension ButtonStyle where Self == GlassProminentButtonStyle {
+    public static var glassProminent: GlassProminentButtonStyle { GlassProminentButtonStyle() }
+}
