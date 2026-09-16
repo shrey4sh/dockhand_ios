@@ -108,30 +108,42 @@ extension DockhandService {
             ?? (object["app"] as? [String: Any])
             ?? (object["server"] as? [String: Any])
 
+        let dhVersion: String? = stringValue(dockhandObject?["version"]) ?? stringValue(object["dockhandVersion"]) ?? stringValue(object["version"])
+        let dhBuild: String? = stringValue(dockhandObject?["build"]) ?? stringValue(object["build"])
+        let dhCommit: String? = stringValue(dockhandObject?["commit"]) ?? stringValue(dockhandObject?["gitCommit"]) ?? stringValue(object["commit"])
+        let dhRuntime: String? = stringValue(dockhandObject?["runtime"]) ?? stringValue(object["runtime"])
+        let dhDatabase: String? = stringValue(dockhandObject?["database"]) ?? stringValue(object["database"])
+
+        let dockhand = DashboardHostSnapshot.Dockhand(
+            version: dhVersion,
+            build: dhBuild,
+            commit: dhCommit,
+            runtime: dhRuntime,
+            database: dhDatabase
+        )
+
+        let docker = DashboardHostSnapshot.Docker(
+            version: dockerObject["version"] as? String ?? String(localized: "Unknown"),
+            apiVersion: dockerObject["apiVersion"] as? String ?? String(localized: "Unknown"),
+            os: dockerObject["os"] as? String ?? String(localized: "Unknown"),
+            arch: dockerObject["arch"] as? String ?? String(localized: "Unknown"),
+            kernelVersion: dockerObject["kernelVersion"] as? String ?? String(localized: "Unknown"),
+            serverVersion: dockerObject["serverVersion"] as? String ?? String(localized: "Unknown"),
+            connectionType: dockerConnection["type"] as? String ?? "unknown",
+            socketPath: dockerConnection["socketPath"] as? String
+        )
+
+        let host = DashboardHostSnapshot.Host(
+            name: hostObject["name"] as? String ?? String(localized: "Unknown"),
+            cpus: intValue(hostObject["cpus"]) ?? 0,
+            memory: intValue(hostObject["memory"]) ?? 0,
+            storageDriver: hostObject["storageDriver"] as? String ?? String(localized: "Unknown")
+        )
+
         return DashboardHostSnapshot(
-            dockhand: .init(
-                version: stringValue(dockhandObject?["version"]) ?? stringValue(object["dockhandVersion"]) ?? stringValue(object["version"]),
-                build: stringValue(dockhandObject?["build"]) ?? stringValue(object["build"]),
-                commit: stringValue(dockhandObject?["commit"]) ?? stringValue(dockhandObject?["gitCommit"]) ?? stringValue(object["commit"]),
-                runtime: stringValue(dockhandObject?["runtime"]) ?? stringValue(object["runtime"]),
-                database: stringValue(dockhandObject?["database"]) ?? stringValue(object["database"])
-            ),
-            docker: .init(
-                version: dockerObject["version"] as? String ?? String(localized: "Unknown"),
-                apiVersion: dockerObject["apiVersion"] as? String ?? String(localized: "Unknown"),
-                os: dockerObject["os"] as? String ?? String(localized: "Unknown"),
-                arch: dockerObject["arch"] as? String ?? String(localized: "Unknown"),
-                kernelVersion: dockerObject["kernelVersion"] as? String ?? String(localized: "Unknown"),
-                serverVersion: dockerObject["serverVersion"] as? String ?? String(localized: "Unknown"),
-                connectionType: dockerConnection["type"] as? String ?? "unknown",
-                socketPath: dockerConnection["socketPath"] as? String
-            ),
-            host: .init(
-                name: hostObject["name"] as? String ?? String(localized: "Unknown"),
-                cpus: intValue(hostObject["cpus"]) ?? 0,
-                memory: intValue(hostObject["memory"]) ?? 0,
-                storageDriver: hostObject["storageDriver"] as? String ?? String(localized: "Unknown")
-            )
+            dockhand: dockhand,
+            docker: docker,
+            host: host
         )
     }
 
