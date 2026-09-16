@@ -13,7 +13,7 @@ packages:
     from: 6.2.2
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm.git
-    exactVersion: 1.10.1
+    from: 1.20.0
 targets:
   DockhandMobile:
     type: application
