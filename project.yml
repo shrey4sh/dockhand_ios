@@ -2,7 +2,7 @@ name: DockhandMobile
 options:
   bundleIdPrefix: pro.dockhand
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "17.0"
   developmentLanguage: en
   useBaseInternationalization: true
 packages:
