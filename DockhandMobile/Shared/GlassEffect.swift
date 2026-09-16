@@ -2,12 +2,19 @@ import SwiftUI
 
 public struct GlassStyle: Sendable {
     public var tintColor: Color? = nil
+    public var isInteractive: Bool = false
     
     public static var regular: GlassStyle { GlassStyle() }
     
     public func tint(_ color: Color) -> GlassStyle {
         var copy = self
         copy.tintColor = color
+        return copy
+    }
+    
+    public func interactive(_ enabled: Bool = true) -> GlassStyle {
+        var copy = self
+        copy.isInteractive = enabled
         return copy
     }
 }
