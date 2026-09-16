@@ -136,7 +136,7 @@ struct SyntaxHighlightingTextEditor: UIViewRepresentable {
             let flexible = UIBarButtonItem(systemItem: .flexibleSpace)
             let done = UIBarButtonItem(
                 title: String(localized: "Done"),
-                style: .prominent,
+                style: .done,
                 target: self,
                 action: #selector(doneTapped)
             )
