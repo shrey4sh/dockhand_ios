@@ -35,7 +35,7 @@ jobs:
           xcodebuild -project DockhandMobile.xcodeproj \
             -scheme DockhandMobile \
             -configuration Release \
-            -destination "generic/platform=iOS" \
+            -sdk iphoneos \
             -archivePath build/Dockhand.xcarchive \
             -skipPackagePluginValidation \
             -skipMacroValidation \
