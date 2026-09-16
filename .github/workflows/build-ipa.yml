@@ -25,7 +25,6 @@ jobs:
             sudo xcode-select -s /Applications/Xcode.app
           fi
           xcodebuild -version
-          xcodebuild -showsdks
           brew install xcodegen
           xcodegen generate
 
@@ -36,7 +35,7 @@ jobs:
           xcodebuild -project DockhandMobile.xcodeproj \
             -scheme DockhandMobile \
             -configuration Release \
-            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -archivePath build/Dockhand.xcarchive \
             -skipPackagePluginValidation \
             -skipMacroValidation \
