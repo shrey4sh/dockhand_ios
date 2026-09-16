@@ -28,7 +28,7 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      - name: Build Archive
+      - name: Build App
         run: |
           defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES
           defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
@@ -36,18 +36,18 @@ jobs:
             -scheme DockhandMobile \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath build/Dockhand.xcarchive \
             -skipPackagePluginValidation \
             -skipMacroValidation \
-            archive \
+            build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            CONFIGURATION_BUILD_DIR=build/Release-iphoneos
 
-      - name: Package IPA
+      - name: Package Sideloadable IPA
         run: |
           mkdir -p Payload
-          cp -r build/Dockhand.xcarchive/Products/Applications/*.app Payload/
+          cp -r build/Release-iphoneos/DockhandMobile.app Payload/
           zip -r Dockhand.ipa Payload
 
       - name: Upload IPA Artifact
