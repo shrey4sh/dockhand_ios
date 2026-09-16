@@ -1,0 +1,41 @@
+name: Build Sideloadable IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build IPA on macOS
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Archive
+        run: |
+          xcodebuild -project DockhandMobile.xcodeproj \
+            -scheme DockhandMobile \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Dockhand.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Dockhand.xcarchive/Products/Applications/*.app Payload/
+          zip -r Dockhand.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dockhand-iOS-IPA
+          path: Dockhand.ipa
+          retention-days: 7
