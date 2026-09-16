@@ -31,7 +31,7 @@ extension View {
                     }
                 }
                 .overlay {
-                    shape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                    shape.stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                 }
         }
     }
@@ -46,7 +46,7 @@ public struct GlassButtonStyle: ButtonStyle {
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
             }
             .opacity(configuration.isPressed ? 0.7 : 1.0)
     }
@@ -61,7 +61,7 @@ public struct GlassProminentButtonStyle: ButtonStyle {
             .background(Color.accentColor.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+                    .stroke(Color.white.opacity(0.25), lineWidth: 0.5)
             }
             .opacity(configuration.isPressed ? 0.7 : 1.0)
     }
